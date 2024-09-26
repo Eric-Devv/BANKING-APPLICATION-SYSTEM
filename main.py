@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import sqlite3
 from tkinter import messagebox
+from tkinter import ttk
 
 
 # database initialization
@@ -32,7 +33,7 @@ def create_account():
             messagebox.showinfo('Success','Account created successfully!')
             clear_entries()
         except ValueError:
-            messagebox.showerror("Error", "please enter a valid amount!")
+            messagebox.showerror("Error", "please enter full details")
     else:
         messagebox.showerror('Error','Please fill out the entries.')
 
@@ -110,7 +111,7 @@ def check_balance():
         else:
             messagebox.showerror("Error", "Account not found.")
     else:
-        messagebox.showerror("Error", "Please enter the accounts holder's name.")
+        messagebox.showerror("Error", "Please enter the account number.")
 
 
 # List all account holders
@@ -147,7 +148,7 @@ def close_account():
         clear_entries()
 
     else:
-        messagebox.showerror("Error", "Please enter the account holder's name.")
+        messagebox.showerror("Error", "Please enter the account details!")
 
 
 #Modify Account (name/balance)
@@ -197,48 +198,149 @@ init_db()
 #Creating the main app window
 app = ctk.CTk()
 app.title("BANKING APPLICATION SOFTWARE")
-app.geometry('500x500')
+app.geometry('810x400')
+app.resizable('false','false')
 
-#labels and entry fields
-label_name = ctk.CTkLabel(app, text = "Name:")
-label_name.pack(pady =5)
+tab_view = ctk.CTkTabview(app, width=800, height=500)
+tab_view.pack(pady=0, padx=0)
 
-entry_name = ctk.CTkEntry(app)
-entry_name.pack(pady = 5)
+# Add tabs
+tab_view.add("Create Account")  
+tab_view.add("Deposit")  
+tab_view.add("Withdraw") 
+tab_view.add("Account Modification")
+tab_view.add("List Accounts")  
 
-label_new_name = ctk.CTkLabel(app, text = "New Name (for modification):")
-label_new_name.pack(pady = 5)
 
-entry_new_name = ctk.CTkEntry(app)
-entry_new_name.pack(pady = 5)
+tab_view.set("List Accounts") 
 
-label_amount = ctk.CTkLabel(app, text = "Amount:")
-label_amount.pack(pady = 5)
+# Create Account tab
+label_name = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Full Name:")
+label_name.place(x=1, y=5)
 
-entry_amount = ctk.CTkEntry(app)
-entry_amount.pack(pady = 5)
+entry_name = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_name.pack(pady=7)
 
-#Buttons for actions
-button_ceate_account = ctk.CTkButton(app, text="Create Account", command=create_account)
-button_ceate_account.pack(pady =10)
+label_account_number = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Account Number:")
+label_account_number.place(x=1, y=48)
 
-button_deposit = ctk.CTkButton(app, text ="Deposit Cash", command=deposit)
-button_deposit.pack(pady =10)
+entry_account_number = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_account_number.pack(pady=7)
 
-button_withdraw = ctk.CTkButton(app, text="Withdraw Cash", command=withdraw)
-button_withdraw.pack(pady=10)
+label_phone_number = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Phone Number:")
+label_phone_number.place(x=1, y=89)
 
-button_check_balance = ctk.CTkButton(app, text="Balance Enquiry", command=check_balance)
-button_check_balance.pack(pady=10)
+entry_phone_number = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_phone_number.pack(pady=7)
 
-button_list_accounts = ctk.CTkButton(app, text="Account Holders List", command=list_accounts)
-button_list_accounts.pack(pady=10)
+label_email_address = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Email Address:")
+label_email_address.place(x=1, y=128)
 
-button_close_account = ctk.CTkButton(app, text="Close Account", command=close_account)
-button_close_account.pack(pady=10)
+entry_email_address = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_email_address.pack(pady=7)
 
-button_modify_account = ctk.CTkButton(app, text="Modify Account", command=modify_account)
-button_modify_account.pack(pady=10)
+def option_changed(selected_option):
+    print(f"Selected option: {selected_option}")
+    label.config(text=f"You selected: {selected_option}")
+
+# Create a label
+label = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Gender:")
+label.place(x=1,y=180)
+
+# Create the dropdown (OptionMenu)
+options = ["MALE", "FEMALE"]
+dropdown = ctk.CTkOptionMenu(master=tab_view.tab("Create Account"), values=options, command=option_changed)
+dropdown.pack(pady=20)
+
+# Set default value for the dropdown
+dropdown.set("Select Gender")  # Default label
+
+button_create_account = ctk.CTkButton(master=tab_view.tab("Create Account"), text="Create Account", )
+button_create_account.place(x=580,y=70)
+
+
+# Deposit tab
+label_name = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Full Name:")
+label_name.place(x=1, y=5)
+
+entry_name = ctk.CTkEntry(master=tab_view.tab("Deposit"))
+entry_name.pack(pady=7)
+
+label_account_number = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Account Number:")
+label_account_number.place(x=1, y=48)
+
+entry_account_number = ctk.CTkEntry(master=tab_view.tab("Deposit"))
+entry_account_number.pack(pady=7)
+
+label_amount = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Amount:")
+label_amount.place(x=1, y=89)
+
+entry_amount = ctk.CTkEntry(master=tab_view.tab("Deposit"))
+entry_amount.pack(pady=17)
+
+button_create_account = ctk.CTkButton(master=tab_view.tab("Deposit"), text="DEPOSIT", )
+button_create_account.place(x=580,y=40)
+
+button_create_account = ctk.CTkButton(master=tab_view.tab("Deposit"), text="CHECK BALANCE", command=check_balance )
+button_create_account.place(x=580,y=90)
+
+#WITHDRAWALS
+label_name = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Full Name:")
+label_name.place(x=1, y=5)
+
+entry_name = ctk.CTkEntry(master=tab_view.tab("Withdraw"))
+entry_name.pack(pady=7)
+
+label_account_number = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Account Number:")
+label_account_number.place(x=1, y=48)
+
+entry_account_number = ctk.CTkEntry(master=tab_view.tab("Withdraw"))
+entry_account_number.pack(pady=7)
+
+label_amount = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Amount:")
+label_amount.place(x=1, y=89)
+
+entry_amount = ctk.CTkEntry(master=tab_view.tab("Withdraw"))
+entry_amount.pack(pady=17)
+
+button_create_account = ctk.CTkButton(master=tab_view.tab("Withdraw"), text="WITHDRAW", )
+button_create_account.place(x=580,y=40)
+
+button_create_account = ctk.CTkButton(master=tab_view.tab("Withdraw"), text="CHECK BALANCE", command=check_balance )
+button_create_account.place(x=580,y=90)
+
+
+#Account modification
+label_name = ctk.CTkLabel(master=tab_view.tab("Account Modification"), text="Full Name:")
+label_name.place(x=1, y=5)
+
+entry_name = ctk.CTkEntry(master=tab_view.tab("Account Modification"))
+entry_name.pack(pady=7)
+
+label_account_number = ctk.CTkLabel(master=tab_view.tab("Account Modification"), text="Account Number:")
+label_account_number.place(x=1, y=48)
+
+entry_account_number = ctk.CTkEntry(master=tab_view.tab("Account Modification"))
+entry_account_number.pack(pady=7)
+
+button_create_account = ctk.CTkButton(master=tab_view.tab("Account Modification"), text="CHANGE DETAILS", command=modify_account )
+button_create_account.place(x=580,y=20)
+
+button_close_account = ctk.CTkButton(master=tab_view.tab("Account Modification"), text="CLOSE ACCOUNT", command=close_account)
+button_close_account.place(x=320,y=127)
+
+
+#LIST ACCOUNTS
+button_list_accounts = ctk.CTkButton(master=tab_view.tab("List Accounts"), text="All Account Holder List", command=list_accounts)
+button_list_accounts.pack(pady=40)
+
+
+
+
+
+
+
+
 
 
 
