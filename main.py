@@ -94,39 +94,110 @@ def withdraw():
 
 
 #Balance enquiry...
+def check_balance():
+    name = entry_name.get()
+
+    if name:
+        conn = sqlite3.connect("Bank.db")
+        cursor = conn.cursor()
+        cursor.execute("SELECT balance FROM accounts WHERE name = ?",(name,))
+        result = cursor.fetchone
+        conn.close()
+
+        if result:
+            balance = result[0]
+            messagebox.showinfo("balance",f"The balance for {name} is {balance:.2f}")
+        else:
+            messagebox.showerror("Error", "Account not found.")
+    else:
+        messagebox.showerror("Error", "Please enter the accounts holder's name.")
+
+
+# List all account holders
+def list_accounts():
+    conn = sqlite3.connect("Bank.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM accounts")
+    accounts = cursor.fetchall()
+    conn.close()
+
+    if accounts:
+        account_list = "\n".join([account[0]for account in accounts])
+        messagebox.showinfo("Account Holders", account_list)
+
+    else:
+        messagebox.showinfo("Account Holders","No account found.")
+
+
+#Close an account
+def close_account():
+    name = entry_name.get()
+
+    if name:
+        conn =sqlite3.connect("Bank.db")
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM accounts WHERE name = ?", (name,))
+        conn.commit()
+        conn.close()
+
+        if cursor.rowcount == 0:
+            messagebox.showerror("Error", "Account not found!")
+        else:
+            messagebox.showinfo("Success","Account closed succesfully.")
+        clear_entries()
+
+    else:
+        messagebox.showerror("Error", "Please enter the account holder's name.")
+
+
+#Modify Account (name/balance)
+def modify_account():
+    name = entry_name.get()
+    new_name = entry_new_name.get()
+    new_balance  = entry_amount.get()
+
+    if name and (new_name or new_balance):
+        conn = sqlite3.connect("Bank.db")
+        cursor = conn.cursor()
+        
+        if new_name:
+            cursor.execute("UPDATE accounts SET balance = ? WHERE name = ?", (new_balance,new_name))
+        
+        if new_balance:
+            try:
+                new_balance = float(new_balance)
+                cursor.execute("UPDATE accounts SET balance = ? WHERE name = ?",(new_balance, name))
+            except ValueError:
+                messagebox.showerror("Error", "please enter a valid amount.")
+                return
             
+        conn.commit()
+        conn.close()
+
+        if cursor.rowcount == 0:
+            messagebox.showerror('Error',"Account not found.")
+        else:
+            messagebox.showinfo('Success', "Account updated successfully")
+        clear_entries()
+
+    else:
+        messagebox.showerror('Error', "Please fill in the required fields")
 
 
+#clear all entry fields
+def clear_entries():
+    entry_name.delete(0, ctk.END)
+    entry_new_name.delete(0, ctk.END)
+    entry_amount.delete(0, ctk.END)
+
+#initialize the database
+init_db()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#Creating the main app window
 app = ctk.CTk()
-app.title("BANKING APPLICATION")
-app.geometry("630x230")
-
-
+app.title("BANKING APPLICATION SOFTWARE")
+app.geometry('500x500')
 
 
 
