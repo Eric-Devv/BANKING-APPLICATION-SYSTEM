@@ -199,6 +199,46 @@ app = ctk.CTk()
 app.title("BANKING APPLICATION SOFTWARE")
 app.geometry('500x500')
 
+#labels and entry fields
+label_name = ctk.CTkLabel(app, text = "Name:")
+label_name.pack(pady =5)
+
+entry_name = ctk.CTkEntry(app)
+entry_name.pack(pady = 5)
+
+label_new_name = ctk.CTkLabel(app, text = "New Name (for modification):")
+label_new_name.pack(pady = 5)
+
+entry_new_name = ctk.CTkEntry(app)
+entry_new_name.pack(pady = 5)
+
+label_amount = ctk.CTkLabel(app, text = "Amount:")
+label_amount.pack(pady = 5)
+
+entry_amount = ctk.CTkEntry(app)
+entry_amount.pack(pady = 5)
+
+#Buttons for actions
+button_ceate_account = ctk.CTkButton(app, text="Create Account", command=create_account)
+button_ceate_account.pack(pady =10)
+
+button_deposit = ctk.CTkButton(app, text ="Deposit Cash", command=deposit)
+button_deposit.pack(pady =10)
+
+button_withdraw = ctk.CTkButton(app, text="Withdraw Cash", command=withdraw)
+button_withdraw.pack(pady=10)
+
+button_check_balance = ctk.CTkButton(app, text="Balance Enquiry", command=check_balance)
+button_check_balance.pack(pady=10)
+
+button_list_accounts = ctk.CTkButton(app, text="Account Holders List", command=list_accounts)
+button_list_accounts.pack(pady=10)
+
+button_close_account = ctk.CTkButton(app, text="Close Account", command=close_account)
+button_close_account.pack(pady=10)
+
+button_modify_account = ctk.CTkButton(app, text="Modify Account", command=modify_account)
+button_modify_account.pack(pady=10)
 
 
 
