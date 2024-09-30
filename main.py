@@ -1,207 +1,194 @@
 import customtkinter as ctk
 import sqlite3
 from tkinter import messagebox
-from tkinter import ttk
 
-
-# database initialization
+# Database initialization
 def init_db():
     conn = sqlite3.connect("Bank.db")
     cursor = conn.cursor()
-    cursor.execute(''' CREATE TABLE IF NOT EXISTS accounts
-                   (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                   name TEXT NOT NULL, 
-                   balance REAL NOT NULL)''')
-    
+    # Drop the accounts table if it exists
+    cursor.execute("DROP TABLE IF EXISTS accounts")
+    # Create the accounts table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS accounts (
+                      accountnumber INTEGER PRIMARY KEY,
+                      name TEXT NOT NULL,
+                      email TEXT NOT NULL,
+                      phone INTEGER NOT NULL,
+                      gender TEXT NOT NULL,
+                      balance REAL DEFAULT 0)''')
     conn.commit()
     conn.close()
 
-
-#creating new account
+# Creating a new account
 def create_account():
     name = entry_name.get()
-    initial_deposit = entry_amount.get()
+    account_number = entry_account_number.get()
+    phone_number = entry_phone_number.get()
+    email_address = entry_email_address.get()
+    gender = entry_gender.get()
 
-    if name and initial_deposit:
+    if all([name, account_number, phone_number, email_address, gender]):
         try:
-            initial_deposit = float(initial_deposit)
+            account_number = int(account_number)
+            phone_number = int(phone_number)
             conn = sqlite3.connect('Bank.db')
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO accounts(name, balance) VALUES (?,?)",(name, initial_deposit))
+            cursor.execute("INSERT INTO accounts (accountnumber, name, email, phone, gender) VALUES (?, ?, ?, ?, ?)",
+                           (account_number, name, email_address, phone_number, gender))
             conn.commit()
             conn.close()
-            messagebox.showinfo('Success','Account created successfully!')
+            messagebox.showinfo('Success', 'Account created successfully!')
             clear_entries()
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Error", "Account number already exists.")
         except ValueError:
-            messagebox.showerror("Error", "please enter full details")
+            messagebox.showerror("Error", "Please enter valid details.")
     else:
-        messagebox.showerror('Error','Please fill out the entries.')
-
+        messagebox.showerror('Error', 'Please fill out all fields.')
 
 # Deposit money to account
 def deposit():
-    name = entry_name.get()
+    account_number = entry_account_number_deposit.get()
     deposit_amount = entry_amount.get()
 
-    if name and deposit_amount:
+    if account_number and deposit_amount:
         try:
             deposit_amount = float(deposit_amount)
             conn = sqlite3.connect('Bank.db')
             cursor = conn.cursor()
-            cursor.execute('UPDATE accounts SET balance = balance + ? WHERE name = ?',(deposit_amount,name))
+            cursor.execute('UPDATE accounts SET balance = balance + ? WHERE accountnumber = ?', (deposit_amount, account_number))
             conn.commit()
-            conn.close()
-
             if cursor.rowcount == 0:
                 messagebox.showerror("Error", "Account not found.")
             else:
                 messagebox.showinfo("Success", "Deposit successful!")
-            
+            conn.close()
             clear_entries()
         except ValueError:
-            messagebox.showerror('Error', "Please the correct infomation.")
-    
+            messagebox.showerror('Error', "Please enter a valid amount.")
     else:
-        messagebox.showerror("Error","Please insert all fields.")
+        messagebox.showerror("Error", "Please fill out all fields.")
 
-
-# withdraw money
+# Withdraw money
 def withdraw():
-    name = entry_name.get()
+    account_number = entry_account_number_withdraw.get()
     withdraw_amount = entry_amount.get()
 
-    if name and withdraw_amount:
+    if account_number and withdraw_amount:
         try:
             withdraw_amount = float(withdraw_amount)
             conn = sqlite3.connect("Bank.db")
-            conn = conn.cursor()
-            cursor.execute("SELECT balance FROM accounts WHERE name =?",(name,))
+            cursor = conn.cursor()
+            cursor.execute("SELECT balance FROM accounts WHERE accountnumber = ?", (account_number,))
             result = cursor.fetchone()
-            
+
             if result:
                 balance = result[0]
                 if balance >= withdraw_amount:
-                    cursor.execute("UPDATE accounts SET balance = balance - ? WHERE name = ?",(name, withdraw_amount))
+                    cursor.execute("UPDATE accounts SET balance = balance - ? WHERE accountnumber = ?", (withdraw_amount, account_number))
                     conn.commit()
-                    conn.close()
                     messagebox.showinfo('Success', "Withdrawal successful!")
-                
                 else:
-                    messagebox.showerror("Error","Insufficient funds.")
+                    messagebox.showerror("Error", "Insufficient funds.")
             else:
-                messagebox.showerror("Error","Account not found.")
+                messagebox.showerror("Error", "Account not found.")
+            conn.close()
+            clear_entries()
         except ValueError:
-            messagebox.showerror("Error","Please fill out all fields.")
+            messagebox.showerror("Error", "Please enter a valid amount.")
 
-
-#Balance enquiry...
+# Balance enquiry
 def check_balance():
-    name = entry_name.get()
+    account_number = entry_account_number_balance.get()
 
-    if name:
+    if account_number:
         conn = sqlite3.connect("Bank.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT balance FROM accounts WHERE name = ?",(name,))
-        result = cursor.fetchone
+        cursor.execute("SELECT balance FROM accounts WHERE accountnumber = ?", (account_number,))
+        result = cursor.fetchone()
         conn.close()
 
         if result:
             balance = result[0]
-            messagebox.showinfo("balance",f"The balance for {name} is {balance:.2f}")
+            messagebox.showinfo("Balance", f"The balance for account number {account_number} is {balance:.2f}")
         else:
             messagebox.showerror("Error", "Account not found.")
     else:
         messagebox.showerror("Error", "Please enter the account number.")
 
-
 # List all account holders
 def list_accounts():
     conn = sqlite3.connect("Bank.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM accounts")
+    cursor.execute("SELECT name, accountnumber FROM accounts")
     accounts = cursor.fetchall()
     conn.close()
 
     if accounts:
-        account_list = "\n".join([account[0]for account in accounts])
+        account_list = "\n".join([f"{account[0]} (Account Number: {account[1]})" for account in accounts])
         messagebox.showinfo("Account Holders", account_list)
-
     else:
-        messagebox.showinfo("Account Holders","No account found.")
+        messagebox.showinfo("Account Holders", "No accounts found.")
 
-
-#Close an account
+# Close an account
 def close_account():
-    name = entry_name.get()
+    account_number = entry_account_number_close.get()
 
-    if name:
-        conn =sqlite3.connect("Bank.db")
+    if account_number:
+        conn = sqlite3.connect("Bank.db")
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM accounts WHERE name = ?", (name,))
+        cursor.execute("DELETE FROM accounts WHERE accountnumber = ?", (account_number,))
         conn.commit()
         conn.close()
 
         if cursor.rowcount == 0:
             messagebox.showerror("Error", "Account not found!")
         else:
-            messagebox.showinfo("Success","Account closed succesfully.")
+            messagebox.showinfo("Success", "Account closed successfully.")
         clear_entries()
-
     else:
-        messagebox.showerror("Error", "Please enter the account details!")
+        messagebox.showerror("Error", "Please enter the account number!")
 
-
-#Modify Account (name/balance)
+# Modify Account (name)
 def modify_account():
-    name = entry_name.get()
-    new_name = entry_new_name.get()
-    new_balance  = entry_amount.get()
+    account_number = entry_account_number_modify.get()
+    new_name = entry_New_name.get()
 
-    if name and (new_name or new_balance):
+    if account_number and new_name:
         conn = sqlite3.connect("Bank.db")
         cursor = conn.cursor()
-        
-        if new_name:
-            cursor.execute("UPDATE accounts SET balance = ? WHERE name = ?", (new_balance,new_name))
-        
-        if new_balance:
-            try:
-                new_balance = float(new_balance)
-                cursor.execute("UPDATE accounts SET balance = ? WHERE name = ?",(new_balance, name))
-            except ValueError:
-                messagebox.showerror("Error", "please enter a valid amount.")
-                return
-            
+        cursor.execute("UPDATE accounts SET name = ? WHERE accountnumber = ?", (new_name, account_number))
         conn.commit()
         conn.close()
 
         if cursor.rowcount == 0:
-            messagebox.showerror('Error',"Account not found.")
+            messagebox.showerror('Error', "Account not found.")
         else:
-            messagebox.showinfo('Success', "Account updated successfully")
+            messagebox.showinfo('Success', "Account updated successfully.")
         clear_entries()
-
     else:
-        messagebox.showerror('Error', "Please fill in the required fields")
+        messagebox.showerror('Error', "Please fill in the required fields.")
 
-
-#clear all entry fields
+# Clear all entry fields
 def clear_entries():
     entry_name.delete(0, ctk.END)
-    entry_new_name.delete(0, ctk.END)
+    entry_account_number.delete(0, ctk.END)
+    entry_phone_number.delete(0, ctk.END)
+    entry_email_address.delete(0, ctk.END)
+    entry_gender.delete(0, ctk.END)
     entry_amount.delete(0, ctk.END)
+    entry_New_name.delete(0, ctk.END)
 
-#initialize the database
+# Initialize the database
 init_db()
 
-
-#Creating the main app window
+# Creating the main app window
 app = ctk.CTk()
 app.title("BANKING APPLICATION SOFTWARE")
-app.geometry('810x400')
-app.resizable('false','false')
+app.geometry('810x380')
+app.resizable('false', 'false')
 
-tab_view = ctk.CTkTabview(app, width=800, height=500)
+tab_view = ctk.CTkTabview(app, width=800, height=370)
 tab_view.pack(pady=0, padx=0)
 
 # Add tabs
@@ -210,141 +197,102 @@ tab_view.add("Deposit")
 tab_view.add("Withdraw") 
 tab_view.add("Account Modification")
 tab_view.add("List Accounts")  
-
+tab_view.add("Close Account")  # Added Close Account tab
 
 tab_view.set("List Accounts") 
 
 # Create Account tab
 label_name = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Full Name:")
 label_name.place(x=1, y=5)
-
-entry_name = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_name = ctk.CTkEntry(master=tab_view.tab("Create Account"), fg_color='white', text_color='black')
 entry_name.pack(pady=7)
 
 label_account_number = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Account Number:")
 label_account_number.place(x=1, y=48)
-
-entry_account_number = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_account_number = ctk.CTkEntry(master=tab_view.tab("Create Account"), fg_color='white', text_color='black')
 entry_account_number.pack(pady=7)
 
 label_phone_number = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Phone Number:")
 label_phone_number.place(x=1, y=89)
-
-entry_phone_number = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+entry_phone_number = ctk.CTkEntry(master=tab_view.tab("Create Account"), fg_color='white', text_color='black')
 entry_phone_number.pack(pady=7)
 
 label_email_address = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Email Address:")
-label_email_address.place(x=1, y=128)
-
-entry_email_address = ctk.CTkEntry(master=tab_view.tab("Create Account"))
+label_email_address.place(x=1, y=130)
+entry_email_address = ctk.CTkEntry(master=tab_view.tab("Create Account"), fg_color='white', text_color='black')
 entry_email_address.pack(pady=7)
 
-def option_changed(selected_option):
-    print(f"Selected option: {selected_option}")
-    label.config(text=f"You selected: {selected_option}")
+label_gender = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Gender:")
+label_gender.place(x=1, y=171)
+entry_gender = ctk.CTkEntry(master=tab_view.tab("Create Account"), fg_color='white', text_color='black')
+entry_gender.pack(pady=7)
 
-# Create a label
-label = ctk.CTkLabel(master=tab_view.tab("Create Account"), text="Gender:")
-label.place(x=1,y=180)
-
-# Create the dropdown (OptionMenu)
-options = ["MALE", "FEMALE"]
-dropdown = ctk.CTkOptionMenu(master=tab_view.tab("Create Account"), values=options, command=option_changed)
-dropdown.pack(pady=20)
-
-# Set default value for the dropdown
-dropdown.set("Select Gender")  # Default label
-
-button_create_account = ctk.CTkButton(master=tab_view.tab("Create Account"), text="Create Account", )
-button_create_account.place(x=580,y=70)
-
+button_create_account = ctk.CTkButton(master=tab_view.tab("Create Account"), text="Create Account", command=create_account)
+button_create_account.place(x=580, y=210)
 
 # Deposit tab
-label_name = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Full Name:")
-label_name.place(x=1, y=5)
+label_account_number_deposit = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Account Number:")
+label_account_number_deposit.place(x=1, y=5)
+entry_account_number_deposit = ctk.CTkEntry(master=tab_view.tab("Deposit"), fg_color='white', text_color='black')
+entry_account_number_deposit.pack(pady=7)
 
-entry_name = ctk.CTkEntry(master=tab_view.tab("Deposit"))
-entry_name.pack(pady=7)
+label_amount_deposit = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Amount:")
+label_amount_deposit.place(x=1, y=48)
+entry_amount = ctk.CTkEntry(master=tab_view.tab("Deposit"), fg_color='white', text_color='black')
+entry_amount.pack(pady=7)
 
-label_account_number = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Account Number:")
-label_account_number.place(x=1, y=48)
+button_deposit = ctk.CTkButton(master=tab_view.tab("Deposit"), text="Deposit", command=deposit)
+button_deposit.place(x=580, y=70)
 
-entry_account_number = ctk.CTkEntry(master=tab_view.tab("Deposit"))
-entry_account_number.pack(pady=7)
+# Withdraw tab
+label_account_number_withdraw = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Account Number:")
+label_account_number_withdraw.place(x=1, y=5)
+entry_account_number_withdraw = ctk.CTkEntry(master=tab_view.tab("Withdraw"), fg_color='white', text_color='black')
+entry_account_number_withdraw.pack(pady=7)
 
-label_amount = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Amount:")
-label_amount.place(x=1, y=89)
+label_amount_withdraw = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Amount:")
+label_amount_withdraw.place(x=1, y=48)
+entry_amount_withdraw = ctk.CTkEntry(master=tab_view.tab("Withdraw"), fg_color='white', text_color='black')
+entry_amount_withdraw.pack(pady=7)
 
-entry_amount = ctk.CTkEntry(master=tab_view.tab("Deposit"))
-entry_amount.pack(pady=17)
+button_withdraw = ctk.CTkButton(master=tab_view.tab("Withdraw"), text="Withdraw", command=withdraw)
+button_withdraw.place(x=580, y=70)
 
-button_create_account = ctk.CTkButton(master=tab_view.tab("Deposit"), text="DEPOSIT", )
-button_create_account.place(x=580,y=40)
+# Modify Account tab
+label_account_number_modify = ctk.CTkLabel(master=tab_view.tab("Account Modification"), text="Account Number:")
+label_account_number_modify.place(x=1, y=5)
+entry_account_number_modify = ctk.CTkEntry(master=tab_view.tab("Account Modification"), fg_color='white', text_color='black')
+entry_account_number_modify.pack(pady=7)
 
-button_create_account = ctk.CTkButton(master=tab_view.tab("Deposit"), text="CHECK BALANCE", command=check_balance )
-button_create_account.place(x=580,y=90)
+label_new_name = ctk.CTkLabel(master=tab_view.tab("Account Modification"), text="New Name:")
+label_new_name.place(x=1, y=48)
+entry_New_name = ctk.CTkEntry(master=tab_view.tab("Account Modification"), fg_color='white', text_color='black')
+entry_New_name.pack(pady=7)
 
-#WITHDRAWALS
-label_name = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Full Name:")
-label_name.place(x=1, y=5)
+button_modify_account = ctk.CTkButton(master=tab_view.tab("Account Modification"), text="Modify Account", command=modify_account)
+button_modify_account.place(x=580, y=70)
 
-entry_name = ctk.CTkEntry(master=tab_view.tab("Withdraw"))
-entry_name.pack(pady=7)
+# List Accounts tab
+button_list_accounts = ctk.CTkButton(master=tab_view.tab("List Accounts"), text="List Accounts", command=list_accounts)
+button_list_accounts.pack(pady=70)
 
-label_account_number = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Account Number:")
-label_account_number.place(x=1, y=48)
+# Close Account tab
+label_account_number_close = ctk.CTkLabel(master=tab_view.tab("Close Account"), text="Account Number:")
+label_account_number_close.place(x=1, y=5)
+entry_account_number_close = ctk.CTkEntry(master=tab_view.tab("Close Account"), fg_color='white', text_color='black')
+entry_account_number_close.pack(pady=7)
 
-entry_account_number = ctk.CTkEntry(master=tab_view.tab("Withdraw"))
-entry_account_number.pack(pady=7)
+button_close_account = ctk.CTkButton(master=tab_view.tab("Close Account"), text="Close Account", command=close_account)
+button_close_account.place(x=580, y=70)
 
-label_amount = ctk.CTkLabel(master=tab_view.tab("Withdraw"), text="Amount:")
-label_amount.place(x=1, y=89)
+# Balance Enquiry
+label_account_number_balance = ctk.CTkLabel(master=tab_view.tab("Deposit"), text="Account Number:")
+label_account_number_balance.place(x=1, y=130)
+entry_account_number_balance = ctk.CTkEntry(master=tab_view.tab("Deposit"), fg_color='white', text_color='black')
+entry_account_number_balance.pack(pady=7)
 
-entry_amount = ctk.CTkEntry(master=tab_view.tab("Withdraw"))
-entry_amount.pack(pady=17)
+button_check_balance = ctk.CTkButton(master=tab_view.tab("Deposit"), text="Check Balance", command=check_balance)
+button_check_balance.place(x=580, y=170)
 
-button_create_account = ctk.CTkButton(master=tab_view.tab("Withdraw"), text="WITHDRAW", )
-button_create_account.place(x=580,y=40)
-
-button_create_account = ctk.CTkButton(master=tab_view.tab("Withdraw"), text="CHECK BALANCE", command=check_balance )
-button_create_account.place(x=580,y=90)
-
-
-#Account modification
-label_name = ctk.CTkLabel(master=tab_view.tab("Account Modification"), text="Full Name:")
-label_name.place(x=1, y=5)
-
-entry_name = ctk.CTkEntry(master=tab_view.tab("Account Modification"))
-entry_name.pack(pady=7)
-
-label_account_number = ctk.CTkLabel(master=tab_view.tab("Account Modification"), text="Account Number:")
-label_account_number.place(x=1, y=48)
-
-entry_account_number = ctk.CTkEntry(master=tab_view.tab("Account Modification"))
-entry_account_number.pack(pady=7)
-
-button_create_account = ctk.CTkButton(master=tab_view.tab("Account Modification"), text="CHANGE DETAILS", command=modify_account )
-button_create_account.place(x=580,y=20)
-
-button_close_account = ctk.CTkButton(master=tab_view.tab("Account Modification"), text="CLOSE ACCOUNT", command=close_account)
-button_close_account.place(x=320,y=127)
-
-
-#LIST ACCOUNTS
-button_list_accounts = ctk.CTkButton(master=tab_view.tab("List Accounts"), text="All Account Holder List", command=list_accounts)
-button_list_accounts.pack(pady=40)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Run the application
 app.mainloop()
